@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+dist/
+.env*
+*.env
+local.settings.json
+.DS_Store
+*.tsbuildinfo
+
+api/data/builds.json
+infra/terraform/azure/terraform.tfvars
+infra/terraform/azure/.terraform/
+infra/terraform/azure/*.tfstate*
+
+.cursor/

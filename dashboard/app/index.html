@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MiniPaaS</title>
+<style>
+body{font:15px system-ui;margin:2rem auto;max-width:800px;padding:0 1rem;color:#000;background:#fff}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #000;padding:6px 10px;text-align:left}
+input,button{font:inherit;padding:6px 10px;border:1px solid #000;background:#fff}
+button{cursor:pointer}
+</style>
+</head>
+<body>
+<h1>MiniPaaS Dashboard</h1>
+<input id="u" placeholder="user handle"> <button onclick="load()">Load</button>
+<h2>Service quality (last 7 days, target 99.5%)</h2><div id="sla"></div>
+<h2>Invoice (current month)</h2><div id="inv"></div>
+<script>
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const table = (h, rows) => "<table><tr>" + h.map(x => `<th>${x}</th>`).join("") + "</tr>" +
+  rows.map(r => "<tr>" + r.map(x => `<td>${esc(x)}</td>`).join("") + "</tr>").join("") + "</table>";
+async function get(kind, user) {
+  const r = await fetch(`/api/data/${kind}?userId=${encodeURIComponent(user)}`);
+  if (!r.ok) throw new Error(`${kind}: ${r.status}`);
+  return r.json();
+}
+async function load() {
+  const user = document.getElementById("u").value.trim();
+  if (!user) return;
+  try {
+    const s = await get("sla", user);
+    document.getElementById("sla").innerHTML = table(
+      ["App", "Checks", "Uptime %", "Avg ms", "p95 ms", "SLA"],
+      s.apps.map(a => [a.app, a.checks, a.uptimePct, a.avgLatencyMs, a.p95LatencyMs, a.meetsSla ? "met" : "MISSED"]));
+    const i = await get("invoice", user);
+    document.getElementById("inv").innerHTML = table(
+      ["App", "Pod-hours", "CPU-hours", "GiB-hours", "Cost USD"],
+      i.lineItems.map(l => [l.app, l.podHours, l.cpuHours, l.memGiBHours, l.cost.total])) +
+      `<p><b>Total: $${esc(i.total)}</b></p>`;
+  } catch (e) {
+    document.getElementById("sla").textContent = e.message;
+    document.getElementById("inv").textContent = "";
+  }
+}
+setInterval(load, 30000);
+</script>
+</body>
+</html>

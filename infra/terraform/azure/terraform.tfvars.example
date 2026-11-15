@@ -1,0 +1,3 @@
+suffix              = "28338"
+location            = "eastus"
+resource_group_name = "minipaas-rg"
